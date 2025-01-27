@@ -1,0 +1,46 @@
+# Import necessary libraries
+import cv2
+import numpy as np
+from keras.preprocessing.image import img_to_array
+from keras.applications.vgg16 import VGG16, preprocess_input
+from keras.models import load_model
+
+# Load pre-trained VGG16 model
+model = VGG16(weights='imagenet')  # You can replace this with your own trained model
+
+# Load face detection model (Haar Cascade)
+face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+
+# Function to preprocess the face image
+def preprocess_face(image):
+    # Convert to grayscale for face detection
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    
+    # Detect faces in the image
+    faces = face_cascade.detectMultiScale(gray, 1.1, 4)
+    
+    for (x, y, w, h) in faces:
+        # Crop face region
+        face = image[y:y+h, x:x+w]
+        # Resize face to fit model input size
+        face_resized = cv2.resize(face, (224, 224))
+        face_array = img_to_array(face_resized)
+        face_array = np.expand_dims(face_array, axis=0)
+        face_array = preprocess_input(face_array)
+        return face_array
+    return None
+
+# Example of reading an image and predicting attractiveness
+image_path = 'path_to_image.jpg'  # Replace with your image path
+image = cv2.imread(image_path)
+
+# Preprocess the face from the image
+face_input = preprocess_face(image)
+
+if face_input is not None:
+    # Make a prediction using the pre-trained model
+    prediction = model.predict(face_input)
+    print(f"Predicted attractiveness score (VGG16 output): {prediction}")
+else:
+    print("No face detected!")
+
